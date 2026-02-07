@@ -20,6 +20,8 @@ def tau_dcmotor(omega, motor):
     # --- Input validation ---
     if not isinstance(motor, dict):
         raise Exception("motor must be a dictionary.")
+    if not isinstance(omega, np.ndarray, float, int):                       # check for array and scaler - John
+        raise Exception("omega must be an array or scalar quantity.")
 
     # Required motor parameters
     required_keys = ['torque_stall', 'torque_noload', 'speed_noload']
@@ -49,6 +51,7 @@ def tau_dcmotor(omega, motor):
 
     # Return scalar if input was scalar
     if np.isscalar(omega):
-        return float(tau)
+        return float(tau) 
 
     return tau
+
