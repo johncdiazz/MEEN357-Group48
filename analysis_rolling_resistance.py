@@ -6,10 +6,10 @@ from subfunctions import F_net, get_gear_ratio
 # ----------------------------------------------------
 # Constants
 # ----------------------------------------------------
-Crr = 0.15
 planet = {"g": 3.72}
+terrain_angle = 0.0          # flat ground (degrees)
 
-# Rover definition (must be local)
+# Rover definition (must be local to this script)
 rover = {
     "wheel_assembly": {
         "wheel": {
@@ -35,35 +35,36 @@ rover = {
 }
 
 # ----------------------------------------------------
-# Terrain slopes (deg)
+# Rolling resistance values to test
 # ----------------------------------------------------
-slope_array_deg = np.linspace(-15, 35, 25)
-v_max = np.zeros(len(slope_array_deg))
+Crr_array = np.linspace(0.01, 0.5, 25)
+v_max = np.zeros(len(Crr_array))
 
+# Gear ratio and wheel radius
 Ng = get_gear_ratio(rover["wheel_assembly"]["speed_reducer"])
 r = rover["wheel_assembly"]["wheel"]["radius"]
 
 # ----------------------------------------------------
-# Loop over slopes
+# Loop over rolling resistance values
 # ----------------------------------------------------
-for i, slope in enumerate(slope_array_deg):
+for i, Crr in enumerate(Crr_array):
 
-    # reset bounds
+    # RESET bounds for each Crr
     omega_low = 1e-3
     omega_high = rover["wheel_assembly"]["motor"]["speed_noload"]
 
     def F(omega):
-        return F_net(omega, slope, rover, planet, Crr)
+        return F_net(omega, terrain_angle, rover, planet, Crr)
 
     F_low = F(omega_low)
     F_high = F(omega_high)
 
-    # No terminal speed case
+    # If no terminal speed exists
     if np.isnan(F_low) or np.isnan(F_high) or F_low * F_high > 0:
         v_max[i] = np.nan
         continue
 
-    # Bisection
+    # Bisection method
     for _ in range(60):
         omega_mid = 0.5 * (omega_low + omega_high)
         F_mid = F(omega_mid)
@@ -77,16 +78,16 @@ for i, slope in enumerate(slope_array_deg):
 
     omega_star = 0.5 * (omega_low + omega_high)
 
-    # Motor speed → rover speed
+    # Convert motor speed → rover speed
     v_max[i] = r * omega_star / Ng
 
 # ----------------------------------------------------
-# Plot
+# Plot results
 # ----------------------------------------------------
 plt.figure()
-plt.plot(slope_array_deg, v_max, 'o-', linewidth=2)
-plt.xlabel("Terrain slope (deg)")
-plt.ylabel("Maximum rover speed (m/s)")
+plt.plot(Crr_array, v_max, 'o-', linewidth=2)
+plt.xlabel("Rolling resistance coefficient, $C_{rr}$ [-]")
+plt.ylabel("Maximum rover speed [m/s]")
 plt.grid(True)
 plt.tight_layout()
 plt.show()
