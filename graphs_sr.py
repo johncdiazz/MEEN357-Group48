@@ -17,8 +17,8 @@ Ng = get_gear_ratio(speed_reducer)
 # find torques and speeds ####### tau in and omega in are output from dc motor
 ## tau_out = tau_in * Ng
 ## omega_out = omega_in / Ng
-tau_out = omega/Ng
-omega_out = tau_in * Ng
+tau_out = tau_in * Ng
+omega_out = omega/Ng
 
 # plot
 plt.figure(figsize=(7, 7))
@@ -32,14 +32,14 @@ plt.plot(tau_out, omega_out)
 power = tau_out * omega_out 
 # plotting power vs. torque
 plt.subplot(3,1,2)
-plt.xlabel("Motor Shaft Torque [Nm]")
-plt.ylabel("Motor Power [W]")
+plt.xlabel("Speed Reducer Torque [Nm]")
+plt.ylabel("Speed Reducer Power [W]")
 plt.plot(tau_out, power)
 
 #plotting power vs. shaft speed
 plt.subplot(3,1,3)
-plt.xlabel("Speed Reducer Torque [Nm]")
-plt.ylabel("Speed Reducer Speed [rad/s]")
+plt.xlabel("Speed Reducer Speed [rad/s]")
+plt.ylabel("Speed Reducer Power [W]")
 plt.plot(omega_out,power)
 plt.tight_layout()
 plt.show()
