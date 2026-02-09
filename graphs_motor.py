@@ -40,8 +40,8 @@ plt.plot(tau, power)
 
 #plotting power vs. shaft speed
 plt.subplot(3,1,3)
-plt.xlabel("Motor Shaft Torque [Nm]")
-plt.ylabel("Motor Shaft Speed [rad/s]")
+plt.xlabel("Motor Shaft Speed [rad/s]")
+plt.ylabel("Motor Shaft Power [W]")
 plt.plot(omega,power)
 plt.tight_layout()
 plt.show()
