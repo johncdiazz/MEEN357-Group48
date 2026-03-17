@@ -687,4 +687,92 @@ def battenergy(t, v, rover):
 
     return float(E)
 #------------------------------------------------------------------------#
+def end_of_mission_event(end_event):
+    """
+    Defines an event that terminates the mission simulation. Mission is over
+    when rover reaches a certain distance, has moved for a maximum simulation 
+    time, or has reached a minimum velocity.
+    """
 
+    mission_distance = end_event['max_distance']
+    mission_max_time = end_event['max_time']
+    mission_min_velocity = end_event['min_velocity']
+
+    # y[0] = velocity, y[1] = position
+    distance_left = lambda t, y: mission_distance - y[1]
+    distance_left.terminal = True
+
+    time_left = lambda t, y: mission_max_time - t
+    time_left.terminal = True
+
+    velocity_threshold = lambda t, y: y[0] - mission_min_velocity
+    velocity_threshold.terminal = True
+    velocity_threshold.direction = -1
+
+    events = [distance_left, time_left, velocity_threshold]
+
+    return events
+#------------------------------------------------------------------------#
+import numpy as np
+from scipy.integrate import solve_ivp
+
+def simulate_rover(rover, planet, experiment, end_event):
+    """
+    Integrates the trajectory of a rover and populates rover['telemetry'].
+    """
+
+    # Check inputs
+    if type(rover) != dict:
+        raise Exception('First input must be a dict')
+    if type(planet) != dict:
+        raise Exception('Second input must be a dict')
+    if type(experiment) != dict:
+        raise Exception('Third input must be a dict')
+    if type(end_event) != dict:
+        raise Exception('Fourth input must be a dict')
+
+    # Pull simulation settings
+    tspan = experiment['time_range']
+    y0 = experiment['initial_conditions']
+
+    # Event functions
+    events = end_of_mission_event(end_event)
+
+    # Solve ODE
+    sol = solve_ivp(
+        fun=lambda t, y: rover_dynamics(t, y, rover, planet, experiment),
+        t_span=(tspan[0], tspan[1]),
+        y0=y0,
+        method='RK45',
+        events=events
+    )
+
+    # Extract solution
+    Time = sol.t
+    velocity = sol.y[0, :]
+    position = sol.y[1, :]
+
+    # Telemetry calculations
+    completion_time = Time[-1]
+    distance_traveled = position[-1] - position[0]
+    max_velocity = np.max(velocity)
+    average_velocity = distance_traveled / completion_time
+    power = mechpower(velocity, rover)
+    battery_energy = battenergy(Time, velocity, rover)
+    energy_per_distance = battery_energy / distance_traveled
+
+    # Populate telemetry dictionary
+    rover['telemetry'] = {
+        'Time': Time,
+        'completion_time': completion_time,
+        'velocity': velocity,
+        'position': position,
+        'distance_traveled': distance_traveled,
+        'max_velocity': max_velocity,
+        'average_velocity': average_velocity,
+        'power': power,
+        'battery_energy': battery_energy,
+        'energy_per_distance': energy_per_distance
+    }
+
+    return rover
